@@ -26,7 +26,7 @@
  */
 
 #undef dout_prefix
-#define dout_prefix *_dout << "-- " << msgr->get_myaddr() << " "
+#define dout_prefix *_dout << "-- " << msgr->get_myaddr() << " dq "
 
 double DispatchQueue::get_max_age(utime_t now) {
   Mutex::Locker l(lock);
@@ -81,8 +81,12 @@ void DispatchQueue::entry()
   while (!stop) {
     while (!mqueue.empty() && !stop) {
       QueueItem qitem = mqueue.dequeue();
-      if (!qitem.is_code())
+      if (!qitem.is_code()) {
+	ldout(cct, 20) << "dequeue " << qitem.get_message() << " prio " << qitem.get_message()->get_priority() << dendl;
 	remove_arrival(qitem.get_message());
+      } else {
+	ldout(cct, 20) << "dequeue code " << qitem.get_code() << dendl;
+      }
       lock.Unlock();
 
       if (qitem.is_code()) {
